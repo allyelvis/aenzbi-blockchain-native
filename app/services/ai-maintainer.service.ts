@@ -1,4 +1,4 @@
-import { Injectable, signal, inject, computed, OnDestroy } from '@angular/core';
+import { Injectable, signal, inject, OnDestroy } from '@angular/core';
 import { BlockchainService } from './blockchain.service';
 
 export type NetworkStatus = 'Optimal' | 'Stable' | 'Congested' | 'Critical';
@@ -71,15 +71,11 @@ export class AiMaintainerService implements OnDestroy {
         setTimeout(() => {
             try {
                 // 1. Calculate TPS
-                const latestBlocks = this.blockchainService.blocks().slice(0, 2);
-                if (latestBlocks.length < 2) {
+                const tps = this.calculateCurrentTps();
+                if (tps === -1) {
                     this.isScanning.set(false);
-                    return;
+                    return; // Abort scan if not enough data
                 }
-                const txCount = latestBlocks[0].transactions.length;
-                const timeDiff = (latestBlocks[0].timestamp - latestBlocks[1].timestamp) / 1000;
-                const tps = timeDiff > 0 ? txCount / timeDiff : 0;
-                this.transactionPerSecond.set(parseFloat(tps.toFixed(2)));
 
                 // 2. Determine Network Status & Adjust Gas
                 this.updateStatusAndGas(tps);
@@ -127,5 +123,61 @@ export class AiMaintainerService implements OnDestroy {
     private log(message: string, type: AiLog['type']): void {
         const newLog: AiLog = { timestamp: Date.now(), message, type };
         this.logMessages.update(logs => [newLog, ...logs.slice(0, 49)]);
+    }
+
+    private calculateCurrentTps(): number {
+        const latestBlocks = this.blockchainService.blocks().slice(0, 2);
+        if (latestBlocks.length < 2) {
+            return -1; // Not enough data to calculate
+        }
+        const txCount = latestBlocks[0].transactions.length;
+        const timeDiff = (latestBlocks[0].timestamp - latestBlocks[1].timestamp) / 1000;
+        const tps = timeDiff > 0 ? txCount / timeDiff : 0;
+        this.transactionPerSecond.set(parseFloat(tps.toFixed(2)));
+        return tps;
+    }
+
+    optimizeGasFees(): void {
+        this.log('Manual gas fee optimization initiated...', 'info');
+        const tps = this.calculateCurrentTps();
+        if (tps === -1) {
+            this.log('Could not optimize: not enough block data.', 'warning');
+            return;
+        }
+
+        const gas = this.blockchainService.gasPrice;
+        const currentGas = gas();
+
+        if (tps <= 0.5) { // Optimal
+            gas.update(g => Math.max(g - 3, 10));
+            this.log(`Network is optimal (TPS: ${tps.toFixed(2)}). Gas price reduced from ${currentGas} to ${gas()}.`, 'success');
+        } else if (tps <= 1) { // Stable
+            gas.update(g => Math.max(g - 1, 10));
+            this.log(`Network is stable (TPS: ${tps.toFixed(2)}). Gas price slightly reduced from ${currentGas} to ${gas()}.`, 'success');
+        } else {
+            this.log(`Network is busy (TPS: ${tps.toFixed(2)}). No reduction in gas price. Use 'Handle Congestion' for high traffic.`, 'info');
+        }
+    }
+
+    handleCongestion(): void {
+        this.log('Manual congestion handling initiated...', 'info');
+        const tps = this.calculateCurrentTps();
+        if (tps === -1) {
+            this.log('Could not handle congestion: not enough block data.', 'warning');
+            return;
+        }
+        
+        const gas = this.blockchainService.gasPrice;
+        const currentGas = gas();
+
+        if (tps > 2.5) { // Critical
+            gas.update(g => Math.min(g + 15, 200));
+            this.log(`CRITICAL CONGESTION (TPS: ${tps.toFixed(2)}). Gas price sharply increased from ${currentGas} to ${gas()}.`, 'error');
+        } else if (tps > 1) { // Congested
+            gas.update(g => Math.min(g + 5, 200));
+            this.log(`High congestion detected (TPS: ${tps.toFixed(2)}). Gas price increased from ${currentGas} to ${gas()}.`, 'warning');
+        } else {
+            this.log(`Network traffic is normal (TPS: ${tps.toFixed(2)}). No congestion handling needed.`, 'success');
+        }
     }
 }

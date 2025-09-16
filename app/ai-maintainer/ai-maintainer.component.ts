@@ -62,6 +62,20 @@ import { BlockchainService } from '../services/blockchain.service';
                             class="w-full bg-brand-accent text-brand-bg font-semibold px-4 py-3 rounded-md hover:bg-brand-accent-hover transition-colors disabled:bg-brand-border/50 disabled:cursor-wait">
                         {{ aiService.isScanning() ? 'Scanning...' : 'Run Diagnostic Scan' }}
                     </button>
+                    
+                    <div class="pt-4 mt-4 border-t border-brand-border/50">
+                        <h4 class="text-sm font-semibold text-brand-muted mb-3 text-center">Manual Interventions</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button (click)="aiService.optimizeGasFees()" [disabled]="aiService.isScanning()"
+                                    class="w-full bg-green-600/20 text-green-300 font-semibold px-4 py-2 rounded-md hover:bg-green-600/40 transition-colors disabled:bg-brand-border/50 disabled:text-brand-muted disabled:cursor-wait">
+                                Optimize Gas Fees
+                            </button>
+                            <button (click)="aiService.handleCongestion()" [disabled]="aiService.isScanning()"
+                                    class="w-full bg-yellow-600/20 text-yellow-300 font-semibold px-4 py-2 rounded-md hover:bg-yellow-600/40 transition-colors disabled:bg-brand-border/50 disabled:text-brand-muted disabled:cursor-wait">
+                                Handle Congestion
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
