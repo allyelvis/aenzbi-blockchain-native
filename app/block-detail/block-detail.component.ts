@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BlockchainService } from '../services/blockchain.service';
@@ -48,19 +48,55 @@ import { map } from 'rxjs/operators';
           <h2 class="text-xl font-semibold mb-4 text-brand-heading">Transactions in this Block</h2>
           <div class="bg-brand-surface rounded-lg p-2 space-y-2 border border-brand-border">
               @for (tx of b.transactions; track tx.hash) {
-                <a [routerLink]="['/transaction', tx.hash]" class="block bg-brand-bg/50 p-3 rounded-md hover:bg-brand-border/40 text-sm">
-                    <p class="font-mono text-xs text-brand-accent truncate">{{ tx.hash }}</p>
-                    <div class="flex justify-between items-center mt-1">
-                        <div>
-                            <p class="text-xs text-brand-muted">From: <span class="font-mono">{{ tx.from.substring(0, 12) }}...</span></p>
-                            <p class="text-xs text-brand-muted">To: <span class="font-mono">{{ tx.to.substring(0, 12) }}...</span></p>
-                        </div>
-                        <div class="text-right">
-                           <p class="font-bold text-brand-heading">{{ tx.amount | number: '1.0-4' }} AENZ</p>
-                           <p class="text-xs text-brand-muted">{{ tx.timestamp | date:'mediumTime' }}</p>
+                <div class="bg-brand-bg/50 rounded-md overflow-hidden transition-all duration-300">
+                   <div (click)="toggleTransaction(tx.hash)" class="p-3 cursor-pointer hover:bg-brand-border/20 text-sm">
+                        <div class="flex justify-between items-center">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-mono text-xs text-brand-accent truncate">{{ tx.hash }}</p>
+                                <div class="flex space-x-2 mt-1 text-xs text-brand-muted truncate">
+                                  <span>From: <span class="font-mono">{{ tx.from.substring(0, 12) }}...</span></span>
+                                  <span>To: <span class="font-mono">{{ tx.to.substring(0, 12) }}...</span></span>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4 ml-4">
+                                <div class="text-right flex-shrink-0">
+                                   <p class="font-bold text-brand-heading">{{ tx.amount | number: '1.0-4' }} AENZ</p>
+                                   <p class="text-xs text-brand-muted">{{ tx.timestamp | date:'mediumTime' }}</p>
+                                </div>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-brand-muted transition-transform duration-200" [class.rotate-180]="expandedTransaction() === tx.hash" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
                         </div>
                     </div>
-                </a>
+
+                    @if (expandedTransaction() === tx.hash) {
+                        <div class="p-4 border-t border-brand-border/50 bg-brand-bg/30 space-y-2 animate-fade-in">
+                            <h3 class="font-semibold text-brand-text mb-2">Transaction Details</h3>
+                            <div class="flex justify-between items-start text-xs">
+                                <span class="text-brand-muted font-medium w-28 flex-shrink-0">From:</span>
+                                <span class="text-right font-mono break-all">{{ tx.from }}</span>
+                            </div>
+                            <div class="flex justify-between items-start text-xs">
+                                <span class="text-brand-muted font-medium w-28 flex-shrink-0">To:</span>
+                                <span class="text-right font-mono break-all">{{ tx.to }}</span>
+                            </div>
+                            <div class="flex justify-between items-start text-xs">
+                                <span class="text-brand-muted font-medium w-28 flex-shrink-0">Fee:</span>
+                                <span class="text-right font-mono">{{ (tx.fee || 0) | number:'1.0-8' }} AENZ</span>
+                            </div>
+                             <div class="flex justify-between items-start text-xs">
+                                <span class="text-brand-muted font-medium w-28 flex-shrink-0">Type:</span>
+                                <span class="text-right font-mono capitalize">{{ (tx.type || 'transfer').replace('_', ' ') }}</span>
+                            </div>
+                            <div class="mt-3 pt-3 border-t border-brand-border/20 text-right">
+                                <a [routerLink]="['/transaction', tx.hash]" class="text-brand-accent hover:underline text-xs font-semibold">
+                                    View Full Transaction Page &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
               } @empty {
                    <p class="text-center text-brand-muted p-4">No transactions in this block.</p>
               }
@@ -87,6 +123,12 @@ export class BlockDetailComponent {
     const blockId = this.id();
     return blockId ? this.blockchainService.getBlock(blockId) : undefined;
   });
+
+  expandedTransaction = signal<string | null>(null);
+
+  toggleTransaction(txHash: string): void {
+    this.expandedTransaction.update(current => current === txHash ? null : txHash);
+  }
   
   goBack(): void {
     this.location.back();

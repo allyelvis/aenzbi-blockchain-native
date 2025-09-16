@@ -24,6 +24,11 @@ export const appRoutes: Routes = [
       import('./dapps/dapps.component').then((m) => m.DappsComponent),
   },
   {
+    path: 'defi',
+    loadComponent: () =>
+      import('./defi/defi.component').then((m) => m.DeFiComponent),
+  },
+  {
     path: 'asset/:address',
     loadComponent: () =>
       import('./asset-detail/asset-detail.component').then((m) => m.AssetDetailComponent),

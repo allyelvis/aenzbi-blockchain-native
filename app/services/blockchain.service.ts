@@ -6,7 +6,7 @@ export interface Transaction {
   to: string;
   amount: number;
   timestamp: number;
-  type?: 'contract_creation' | 'token_mint';
+  type?: 'contract_creation' | 'token_mint' | 'stake' | 'unstake' | 'claim_rewards';
   fee?: number;
 }
 
@@ -261,5 +261,32 @@ export class BlockchainService {
     return this.transactions().filter(tx => 
         tx.to.toLowerCase() === lowerCaseAddress || tx.from.toLowerCase() === lowerCaseAddress
     );
+  }
+
+  executeDeFiTransaction(type: 'stake' | 'unstake' | 'claim_rewards', amount: number, fee: number): boolean {
+    const wallet = this.wallet();
+    const toAddress = 'aenz_defi_staking_contract_v1';
+
+    if (type === 'stake') {
+        if (wallet.balance < amount + fee) return false;
+        this.wallet.update(w => ({ ...w, balance: w.balance - (amount + fee) }));
+    } 
+    else { 
+        if (wallet.balance < fee) return false;
+        // For unstake/claim, amount is returned to balance, fee is deducted.
+        this.wallet.update(w => ({ ...w, balance: w.balance + amount - fee }));
+    }
+
+    const tx: Transaction = {
+        hash: this.generateHash(64),
+        from: wallet.address,
+        to: toAddress,
+        amount,
+        timestamp: Date.now(),
+        type: type,
+        fee: fee
+    };
+    this.transactions.update(txs => [tx, ...txs]);
+    return true;
   }
 }
