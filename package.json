@@ -1,0 +1,24 @@
+
+{
+  "name": "aenzbi-blockchain-interface",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A web-based interface for the Aenzbi mock blockchain, featuring a DApp Hub and an AI Maintainer.",
+  "scripts": {
+    "start": "echo \"Application runs in a self-contained environment.\""
+  },
+  "dependencies": {
+    "@angular/common": "^20.1.6-0",
+    "@angular/core": "^20.1.6-0",
+    "@angular/forms": "^20.1.6-0",
+    "@angular/platform-browser": "^20.1.6-0",
+    "@angular/router": "^20.1.6-0",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.3",
+    "typescript": "^5.4.5"
+  },
+  "author": "Gemini AI",
+  "license": "MIT"
+}
