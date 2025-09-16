@@ -237,6 +237,21 @@ export class BlockchainService {
     return null;
   }
 
+  getBlock(identifier: string): Block | undefined {
+    const height = parseInt(identifier, 10);
+    if (!isNaN(height)) {
+      const blockByHeight = this.blocks().find(b => b.height === height);
+      if (blockByHeight) return blockByHeight;
+    }
+    const lowerIdentifier = identifier.toLowerCase();
+    return this.blocks().find(b => b.hash.toLowerCase() === lowerIdentifier);
+  }
+
+  getTransaction(hash: string): Transaction | undefined {
+    const lowerCaseHash = hash.toLowerCase();
+    return this.transactions().find(t => t.hash.toLowerCase() === lowerCaseHash);
+  }
+
   getAssetByAddress(address: string): Asset | undefined {
     return this.userAssets().find(asset => asset.address === address);
   }

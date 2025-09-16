@@ -33,6 +33,20 @@ export const appRoutes: Routes = [
     loadComponent: () =>
       import('./ai-maintainer/ai-maintainer.component').then((m) => m.AiMaintainerComponent),
   },
+  {
+    path: 'block/:id',
+    loadComponent: () =>
+      import('./block-detail/block-detail.component').then(
+        (m) => m.BlockDetailComponent
+      ),
+  },
+  {
+    path: 'transaction/:hash',
+    loadComponent: () =>
+      import('./transaction-detail/transaction-detail.component').then(
+        (m) => m.TransactionDetailComponent
+      ),
+  },
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: 'dashboard' },
 ];

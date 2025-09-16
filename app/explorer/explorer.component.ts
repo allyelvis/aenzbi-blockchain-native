@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { BlockchainService, Block, Transaction } from '../services/blockchain.service';
 import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-explorer',
@@ -85,7 +86,7 @@ import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
                 </thead>
                 <tbody>
                   @for (block of blocks(); track block.hash) {
-                    <tr class="border-b border-brand-border hover:bg-brand-border/30">
+                    <tr (click)="navigateToBlock(block)" class="border-b border-brand-border hover:bg-brand-border/30 cursor-pointer">
                       <td class="px-6 py-4 font-mono text-brand-accent">{{ block.height }}</td>
                       <td class="px-6 py-4 font-mono truncate max-w-xs">{{ block.hash }}</td>
                       <td class="px-6 py-4 text-center">{{ block.transactions.length }}</td>
@@ -109,7 +110,7 @@ import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
                 </thead>
                 <tbody>
                    @for (tx of transactions(); track tx.hash) {
-                    <tr class="border-b border-brand-border hover:bg-brand-border/30">
+                    <tr (click)="navigateToTransaction(tx)" class="border-b border-brand-border hover:bg-brand-border/30 cursor-pointer">
                       <td class="px-6 py-4 font-mono text-brand-accent truncate max-w-sm">{{ tx.hash }}</td>
                       <td class="px-6 py-4 font-mono truncate max-w-xs">{{ tx.from }}</td>
                       <td class="px-6 py-4 font-mono truncate max-w-xs">{{ tx.to }}</td>
@@ -128,6 +129,7 @@ import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 })
 export class ExplorerComponent {
   private blockchainService = inject(BlockchainService);
+  private router = inject(Router);
   blocks = this.blockchainService.blocks;
   transactions = this.blockchainService.transactions;
   activeTab = signal<'blocks' | 'transactions'>('blocks');
@@ -146,5 +148,13 @@ export class ExplorerComponent {
     } else {
       this.searchResult.set('not_found');
     }
+  }
+
+  navigateToBlock(block: Block): void {
+    this.router.navigate(['/block', block.height]);
+  }
+
+  navigateToTransaction(tx: Transaction): void {
+    this.router.navigate(['/transaction', tx.hash]);
   }
 }
